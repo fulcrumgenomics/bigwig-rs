@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-10-13
+
 ### Added
 
 - **`BigWigWriter` and `WriterOptions`: a streaming bigWig writer with bounded memory.** It writes fixedStep, variableStep and bedGraph sections in kent's file layout, builds zoom levels in the same pass (spilling them to one temporary file beyond `zoom_memory_limit`), and validates every push before changing any state, so a rejected item leaves the writer usable. `finish()` is mandatory: an unfinished file keeps a zero magic number and is rejected by every reader. `create_with` requires an empty sink and rejects any other with an `InvalidInput` I/O error, so a reused sink can't leave stale bytes after the file.
