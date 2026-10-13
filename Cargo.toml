@@ -8,7 +8,7 @@ documentation = "https://docs.rs/bigwig"
 readme = "README.md"
 license = "MIT"
 keywords = ["bioinformatics", "genomics", "bigwig", "wig", "bedgraph"]
-categories = ["science", "encoding", "parser-implementations"]
+categories = ["science::bioinformatics", "encoding", "parser-implementations"]
 edition = "2024"
 rust-version = "1.85"
 
@@ -25,9 +25,9 @@ libdeflate = ["dep:libdeflater"]
 zlib-rs = ["dep:flate2", "flate2/zlib-rs"]
 
 [dependencies]
-flate2 = { version = "1", default-features = false, optional = true }
+flate2 = { version = "1.1", default-features = false, optional = true }
 libdeflater = { version = "1.26", optional = true }
-log = "0.4"
+log = "0.4.4"
 thiserror = "2"
 
 [dev-dependencies]

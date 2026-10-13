@@ -15,4 +15,4 @@ publish = true
 # Tags are `v<version>` rather than cargo-release's default `<crate>-v<version>`.
 tag-name = "v{{version}}"
 
-pre-release-commit-message = "Bump version to {{version}}"
+pre-release-commit-message = "Release {{version}}"
