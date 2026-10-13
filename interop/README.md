@@ -101,6 +101,7 @@ Each is commented in the code where it is applied.
 - **Std near zero.** A std computed from sums is accurate only to about 1e-6 of the RMS value once the values are nearly constant, so stds also match when their variances agree to within 1e-12 of the mean square.
   - Below that floor, kent prints `n/a`: it takes an unguarded sqrt of a variance rounded below zero.
   - libBigWig's zoom std is NaN for at most one covered base, or for a variance below −1e-8.
+  - On Linux, the square root of that negative variance also sets `errno`, which libBigWig treats as an error, so the whole `stats()` call fails. The check accepts that only for a query with a bin whose variance is within the floor of zero.
   - libBigWig's exact std is two-pass, so it is exactly 0 for constant values.
 - **Std of an empty file.** kent and bigtools print NaN, and our `Summary::std` is 0.
 - **bigtools' input order.** bigtools `bedgraphtobigwig` needs `--sorted start` for BAM-order chromosomes; its default requires byte order.
