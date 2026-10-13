@@ -1,0 +1,22 @@
+# The other bigWig implementations the interop matrix checks against. Versions are pinned so a
+# run is reproducible; bump them deliberately. igv.js is not here: run.sh fetches it.
+name: bigwig-interop
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python=3.12
+  - nodejs=22
+  - pybigwig=0.3.26
+  - bigtools=0.5.8
+  - ucsc-bigwiginfo=482
+  - ucsc-bigwigtobedgraph=482
+  - ucsc-bigwigtowig=482
+  - ucsc-bigwigsummary=482
+  - ucsc-bigwigaverageoverbed=482
+  - ucsc-bedgraphtobigwig=482
+  - ucsc-wigtobigwig=482
+  # IGV desktop's jars, in $CONDA_PREFIX/lib/igv, which run.sh reads with this JDK. This build
+  # reports its own version as "user", so the pin here is the only record of it.
+  - igv=2.19.8
+  - openjdk=21

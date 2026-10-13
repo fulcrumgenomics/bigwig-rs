@@ -1,0 +1,18 @@
+# Configuration for cargo-release (https://github.com/crate-ci/cargo-release).
+#
+# One-time setup:
+#   cargo install cargo-release
+#
+# Cut a release:
+#   cargo release 0.1.0            # dry run: shows what would happen
+#   cargo release 0.1.0 --execute  # bumps the version, commits, tags, pushes and publishes
+#
+# CHANGELOG.md stamping is configured under `[package.metadata.release]` in Cargo.toml.
+
+# Publish to crates.io. Requires a crates.io token on the maintainer's machine (`cargo login`).
+publish = true
+
+# Tags are `v<version>` rather than cargo-release's default `<crate>-v<version>`.
+tag-name = "v{{version}}"
+
+pre-release-commit-message = "Bump version to {{version}}"

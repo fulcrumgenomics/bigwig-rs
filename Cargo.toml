@@ -1,0 +1,58 @@
+[package]
+name = "bigwig"
+version = "0.1.0"
+authors = ["Tim Fennell <tim@fulcrumgenomics.com>"]
+description = "Read and write bigWig, wig and bedGraph files"
+repository = "https://github.com/fulcrumgenomics/bigwig-rs"
+documentation = "https://docs.rs/bigwig"
+readme = "README.md"
+license = "MIT"
+keywords = ["bioinformatics", "genomics", "bigwig", "wig", "bedgraph"]
+categories = ["science", "encoding", "parser-implementations"]
+edition = "2024"
+rust-version = "1.85"
+
+# Allowlist of what gets published to crates.io, so dev and release tooling can never leak into a
+# release. `LICENSE` is listed explicitly because `license` above is an SPDX id, not a
+# `license-file`.
+include = ["/src", "/tests", "/benches", "/Cargo.toml", "/README.md", "/LICENSE", "/CHANGELOG.md"]
+
+[features]
+default = ["libdeflate"]
+# At least one backend must be enabled (lib.rs emits a compile_error! otherwise). With both on,
+# libdeflate is used, so turning on `zlib-rs` elsewhere in a dependency graph never changes output.
+libdeflate = ["dep:libdeflater"]
+zlib-rs = ["dep:flate2", "flate2/zlib-rs"]
+
+[dependencies]
+flate2 = { version = "1", default-features = false, optional = true }
+libdeflater = { version = "1.26", optional = true }
+log = "0.4"
+thiserror = "2"
+
+[dev-dependencies]
+# Plotting and rayon are off: benchmarks report to the terminal and CI only needs the numbers.
+criterion = { version = "0.7", default-features = false, features = ["cargo_bench_support"] }
+proptest = "1"
+tempfile = "3"
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
+# On `cargo release X.Y.Z`, the lone `## [Unreleased]` heading becomes `## [Unreleased]` (kept,
+# now empty) followed by `## [X.Y.Z] - <date>`, so the accumulated notes drop under the released
+# version. `exactly = 1` makes the release abort if the heading is missing or renamed.
+[package.metadata.release]
+pre-release-replacements = [
+    { file = "CHANGELOG.md", search = "## \\[Unreleased\\]", replace = "## [Unreleased]\n\n## [{{version}}] - {{date}}", exactly = 1 },
+]
+
+# Criterion supplies its own `main`.
+[[bench]]
+name = "bigwig"
+harness = false
+
+# The pure-Rust deflate backend is ~15x slower unoptimised, which dominated the zlib-rs test run.
+[profile.dev.package.zlib-rs]
+opt-level = 3

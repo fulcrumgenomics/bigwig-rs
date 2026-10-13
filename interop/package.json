@@ -1,0 +1,10 @@
+{
+  "name": "bigwig-interop",
+  "private": true,
+  "description": "The @gmod/bbi reader for the bigwig interop matrix (bbi_dump.mjs)",
+  "type": "module",
+  "dependencies": {
+    "@gmod/bbi": "11.3.2",
+    "generic-filehandle2": "2.5.1"
+  }
+}

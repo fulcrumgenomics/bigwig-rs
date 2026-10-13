@@ -1,0 +1,16 @@
+[package]
+name = "bigwig-interop"
+version = "0.0.0"
+description = "Cross-implementation interop harness for the bigwig crate"
+edition = "2024"
+publish = false
+
+[dependencies]
+bigwig = { path = ".." }
+clap = { version = "4.6", features = ["derive"] }
+fgoxide = "0.7"
+serde = { version = "1", features = ["derive"] }
+
+# A workspace of its own, so the root crate's `cargo` commands never build this package.
+[workspace]
+members = ["."]

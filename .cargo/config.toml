@@ -1,0 +1,13 @@
+# Lint and test run twice: with both backend features on, libdeflate wins and the zlib-rs code is
+# cfg'd out, so a zlib-rs-only configuration is needed to check that code at all.
+[alias]
+ci-fmt = "fmt --all -- --check"
+ci-lint = "clippy --all-targets --all-features --locked -- -D warnings -W clippy::pedantic"
+ci-lint-zlib = "clippy --all-targets --no-default-features --features zlib-rs --locked -- -D warnings -W clippy::pedantic"
+ci-test = "nextest run --all-features --locked --no-tests=pass"
+ci-test-zlib = "nextest run --no-default-features --features zlib-rs --locked --no-tests=pass"
+ci-doctest = "test --doc --all-features --locked"
+
+# Rustdoc reads its flags from here, not from an alias; this makes `cargo doc` fail on warnings.
+[build]
+rustdocflags = ["-D", "warnings"]

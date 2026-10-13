@@ -1,0 +1,2 @@
+# Domain names that appear in prose, not code identifiers; ".." keeps clippy's defaults.
+doc-valid-idents = ["..", "JBrowse", "libBigWig", "pyBigWig", "bigWig", "bigBed", "bedGraph", "fixedStep", "variableStep", "cirTree", "BigWig", "BigBed"]

@@ -1,0 +1,49 @@
+name: Interop
+
+# The cross-implementation matrix: our files read by kent, pyBigWig, bigtools, @gmod/bbi, IGV and
+# igv.js, and their files read by us. See interop/README.md.
+on:
+  pull_request:
+  workflow_dispatch:
+
+# Least privilege: jobs only read the repository.
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: 0
+
+jobs:
+  interop:
+    name: Interop matrix
+    # x86_64 Linux, where bioconda has every tool.
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - name: Install Rust toolchain
+        run: rustup toolchain install
+      - name: Cache dependencies
+        uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+        with:
+          workspaces: interop
+      # Built outside the conda environment's login shell, so the runner's own cargo is used.
+      - name: Build the interop binary
+        run: cargo build --release --locked --manifest-path interop/Cargo.toml
+      - name: Install kent, pyBigWig, bigtools, IGV, Java and node
+        uses: mamba-org/setup-micromamba@f457c30a868e4760d3a6fcea5f25dc655b8edf39 # v3.2.1
+        with:
+          environment-file: interop/environment.yml
+          cache-environment: true
+          init-shell: bash
+      # Steps that need the environment run in a login shell, where micromamba activates it.
+      - name: Install @gmod/bbi
+        shell: bash -el {0}
+        working-directory: interop
+        run: npm ci --no-audit --no-fund
+      - name: Run the interop matrix
+        shell: bash -el {0}
+        env:
+          INTEROP_BIN: ${{ github.workspace }}/interop/target/release/bigwig-interop
+        run: interop/run.sh

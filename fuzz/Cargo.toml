@@ -1,0 +1,60 @@
+[package]
+name = "bigwig-fuzz"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+arbitrary = { version = "1", features = ["derive"] }
+libfuzzer-sys = "0.4"
+bigwig = { path = ".." }
+
+# A workspace of its own, so the root crate's `cargo` commands never build this package.
+[workspace]
+members = ["."]
+
+[[bin]]
+name = "parse_bedgraph"
+path = "fuzz_targets/parse_bedgraph.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "parse_wig"
+path = "fuzz_targets/parse_wig.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "bedgraph_round_trip"
+path = "fuzz_targets/bedgraph_round_trip.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "read_bigwig"
+path = "fuzz_targets/read_bigwig.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "write_then_read"
+path = "fuzz_targets/write_then_read.rs"
+test = false
+doc = false
+bench = false
+
+# Writes the seed corpus for `read_bigwig`; not a fuzz target.
+[[bin]]
+name = "gen_seeds"
+path = "src/gen_seeds.rs"
+test = false
+doc = false
+bench = false

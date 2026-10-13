@@ -1,0 +1,129 @@
+name: Check
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+# Least privilege: jobs only read the repository.
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: 0
+
+# rust-toolchain.toml names the toolchain and its components; `rustup toolchain install` with no
+# argument installs exactly that, and nothing else.
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - name: Install Rust toolchain
+        run: rustup toolchain install
+      - name: Rustfmt check
+        run: cargo ci-fmt
+
+  lint:
+    name: Lint (${{ matrix.backend }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - backend: all-features
+            alias: ci-lint
+          - backend: zlib-rs
+            alias: ci-lint-zlib
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - name: Install Rust toolchain
+        run: rustup toolchain install
+      - name: Cache dependencies
+        uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+      - name: Clippy check
+        run: cargo ${{ matrix.alias }}
+
+  test:
+    name: Test (${{ matrix.backend }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - backend: all-features
+            alias: ci-test
+          - backend: zlib-rs
+            alias: ci-test-zlib
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - name: Install Rust toolchain
+        run: rustup toolchain install
+      - name: Cache dependencies
+        uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+      - name: Install nextest
+        uses: taiki-e/install-action@1168f6810a3cb30a3514bf5756a3b7f0422c6df8 # v2
+        with:
+          tool: cargo-nextest
+      - name: Unit tests
+        run: cargo ${{ matrix.alias }}
+
+  doctest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - name: Install Rust toolchain
+        run: rustup toolchain install
+      - name: Cache dependencies
+        uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+      - name: Doc tests
+        run: cargo ci-doctest
+
+  doc:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - name: Install Rust toolchain
+        run: rustup toolchain install
+      - name: Cache dependencies
+        uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+      # `.cargo/config.toml` sets `rustdocflags = ["-D", "warnings"]`.
+      - name: Build docs
+        run: cargo doc --all-features --no-deps --locked
+
+  deny:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - name: Install Rust toolchain
+        run: rustup toolchain install
+      - name: Install cargo-deny
+        uses: taiki-e/install-action@1168f6810a3cb30a3514bf5756a3b7f0422c6df8 # v2
+        with:
+          tool: cargo-deny
+      - name: Supply-chain check
+        run: cargo deny check
+
+  msrv:
+    name: MSRV (1.85)
+    runs-on: ubuntu-latest
+    # Overrides rust-toolchain.toml for every cargo and rustc call in the job, the cache key included.
+    env:
+      RUSTUP_TOOLCHAIN: "1.85"
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - name: Install Rust toolchain
+        run: rustup toolchain install 1.85 --profile minimal
+      - name: Cache dependencies
+        uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+      - name: Check
+        run: cargo check --all-features --locked

@@ -1,0 +1,67 @@
+name: Fuzz
+
+# A smoke run of every fuzz target, weekly and on demand. Not part of the PR gate.
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+    inputs:
+      seconds:
+        description: Seconds to fuzz each target
+        default: "300"
+
+# Least privilege: jobs only read the repository.
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: 0
+
+jobs:
+  fuzz:
+    name: Fuzz (${{ matrix.target }})
+    runs-on: ubuntu-latest
+    # cargo-fuzz needs nightly. This overrides rust-toolchain.toml, which pins stable, for every
+    # cargo and rustc call in the job, the cache key included.
+    env:
+      RUSTUP_TOOLCHAIN: nightly
+    strategy:
+      fail-fast: false
+      matrix:
+        # To add a target: write fuzz/fuzz_targets/<name>.rs, add a matching [[bin]] to
+        # fuzz/Cargo.toml, and append <name> here.
+        target:
+          - parse_bedgraph
+          - parse_wig
+          - bedgraph_round_trip
+          - read_bigwig
+          - write_then_read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - name: Install Rust toolchain
+        run: rustup toolchain install nightly --profile minimal
+      - name: Cache dependencies
+        uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+        with:
+          workspaces: fuzz
+      # taiki-e/install-action has no cargo-fuzz manifest at the SHA check.yml pins.
+      - name: Install cargo-fuzz
+        run: cargo install cargo-fuzz --locked
+      # Seeds are generated, never checked in. Only targets that read bigWig bytes use them.
+      - name: Generate seed corpus
+        if: matrix.target == 'read_bigwig'
+        working-directory: fuzz
+        run: cargo run --release --bin gen_seeds -- corpus/read_bigwig
+      - name: Fuzz
+        run: >
+          cargo fuzz run ${{ matrix.target }} --
+          -max_total_time=${{ inputs.seconds || 300 }} -rss_limit_mb=2048 -timeout=10
+          -max_len=262144
+      - name: Upload crash artifacts
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: fuzz-artifacts-${{ matrix.target }}
+          path: fuzz/artifacts/${{ matrix.target }}
