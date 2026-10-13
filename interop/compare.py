@@ -860,8 +860,19 @@ def pybigwig_stats(bw, ours, query, exact):
     rows = ours.summaries(query, "raw" if exact else "best-zoom")
     tolerance = RAW_REL_TOL if exact else ZOOM_REL_TOL
     compared = 0
+    failed_std = False
     for statistic in PYBIGWIG_STATS_TYPES:
-        theirs = bw.stats(query.chrom, query.start, query.end, type=statistic, nBins=query.bins, exact=exact)
+        try:
+            theirs = bw.stats(query.chrom, query.start, query.end, type=statistic, nBins=query.bins, exact=exact)
+        except RuntimeError:
+            # libBigWig's zoom std takes the square root of a variance rounded below -1e-8
+            # (bwStats.c). glibc's sqrt then sets errno, which libBigWig takes as a failure of
+            # the whole call; elsewhere it gives NaN. Either is a variance near zero, so the call
+            # may fail only when some bin's variance is within the floor of zero.
+            if statistic == "std" and not exact and any(variance_near_zero(row) for row in rows):
+                failed_std = True
+                continue
+            raise
         for index, (their, row) in enumerate(zip(theirs, rows)):
             if row["covered_bases"] == "":
                 if their is not None:
@@ -891,7 +902,17 @@ def pybigwig_stats(bw, ours, query, exact):
             compared += 1
     if compared == 0:
         raise Mismatch(f"{describe(query)}: no bin has data; nothing was compared")
+    if failed_std:
+        return f"{describe(query)}: {compared} values; std failed on a variance near zero"
     return f"{describe(query)}: {compared} values"
+
+
+def variance_near_zero(row):
+    """Whether a summary row has data and a variance within the floor of zero."""
+    if row["covered_bases"] == "":
+        return False
+    covered, total, total_squares = float(row["covered_bases"]), float(row["sum"]), float(row["sum_squares"])
+    return variance(covered, total, total_squares) <= variance_floor(covered, total_squares)
 
 
 # ---------------------------------------------------------------------------------------------
